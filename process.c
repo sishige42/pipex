@@ -18,7 +18,11 @@ static void	child_process(t_pipex pipex, char **cmd_args, int i)
 	{
 		close(pipex.pipes[i].fds[R]);
 		if (set_input(pipex.infile))
+		{
+			fprintf(stderr, "%s: %s: %s\n", cmd_args[0], pipex.infile, strerror(errno));
+			close(pipex.pipes[i].fds[W]);
 			exit(EXIT_FAILURE);
+		}
 	}
 	if (i == pipex.n_cmds - 1)
 		set_output(pipex.outfile);
@@ -29,7 +33,7 @@ static void	child_process(t_pipex pipex, char **cmd_args, int i)
 		close(pipex.pipes[i].fds[W]);
 	}
 	ft_execvpe(cmd_args[0], cmd_args, pipex.envp);
-	ft_fprintf(stderr, "pipex: %s: command not found\n", cmd_args[0]);
+	fprintf(stderr, "pipex: %s: command not found\n", cmd_args[0]);
 	exit(127);
 }
 
@@ -84,22 +88,47 @@ int	create_process(t_pipex pipex)
 	char	**cmd_args;
 	int		i;
 
-	pids = (pid_t *)malloc(sizeof(pid_t) * pipex.n_cmds);
+	pids = malloc(sizeof(pid_t) * pipex.n_cmds);
 	if (pids == NULL)
-		die("malloc");
-	i = 0;
-	while (i < pipex.n_cmds)
+		die("create_process(): malloc");
+	i = pipex.n_cmds;
+	while (i--)
 	{
 		cmd_args = make_args(pipex.cmds[i]);
 		pids[i] = fork();
 		if (pids[i] == -1)
-			die("fork");
+			die("create_process(): fork");
 		if (pids[i] == 0)
 			child_process(pipex, cmd_args, i);
-		else if (i != pipex.n_cmds - 1)
+		else if (i - 1 < 0)
 			parent_process(pipex.pipes[i].fds);
 		cleanup(cmd_args);
-		i++;
 	}
 	return (wait_process(pids, pipex.n_cmds));
 }
+
+//int	create_process(t_pipex pipex)
+//{
+//	pid_t	*pids;
+//	char	**cmd_args;
+//	int		i;
+//
+//	pids = (pid_t *)malloc(sizeof(pid_t) * pipex.n_cmds);
+//	if (pids == NULL)
+//		die("malloc");
+//	i = 0;
+//	while (i < pipex.n_cmds)
+//	{
+//		cmd_args = make_args(pipex.cmds[i]);
+//		pids[i] = fork();
+//		if (pids[i] == -1)
+//			die("fork");
+//		if (pids[i] == 0)
+//			child_process(pipex, cmd_args, i);
+//		else if (i != pipex.n_cmds - 1)
+//			parent_process(pipex.pipes[i].fds);
+//		cleanup(cmd_args);
+//		i++;
+//	}
+//	return (wait_process(pids, pipex.n_cmds));
+//}
