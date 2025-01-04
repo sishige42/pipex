@@ -65,7 +65,7 @@ int	set_input(char *file)
 		if (dup2(input_fd, STDIN_FILENO) == -1)
 			perror("dup2");
 		close(input_fd);
-		stat = warn(file);
+		stat = 1;
 	}
 	return (stat);
 }
@@ -98,7 +98,7 @@ int	main(int argc, char *const argv[], char *const envp[])
 	init_pipex(&pipex, argc, argv, envp);
 	stat = create_process(pipex);
 	i = 0;
-	while(i < pipex.n_cmds - 1)
+	while (i < pipex.n_cmds - 1)
 		free(pipex.pipes + i++);
 	return (stat);
 }
